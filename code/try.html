@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка Shapefile и отображение в Алматы</title>
+    <link rel="stylesheet" href="https://js.arcgis.com/4.26/esri/themes/light/main.css">
+    <script src="https://js.arcgis.com/4.26/"></script>
+    <style>
+        html, body, #viewDiv {
+            padding: 0;
+            margin: 0;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="viewDiv"></div>
+    <input type="file" id="shapefileInput" accept=".zip" />
+    <script>
+        require([
+            "esri/Map",
+            "esri/views/MapView",
+            "esri/layers/GraphicsLayer",
+            "esri/request",
+            "esri/Graphic"
+        ], function(Map, MapView, GraphicsLayer, esriRequest, Graphic) {
+
+            // Создаем карту с центром в Алматы
+            const map = new Map({
+                basemap: "streets-navigation-vector" // Выбор базовой карты
+            });
+
+            // Создаем представление карты
+            const view = new MapView({
+                container: "viewDiv",
+                map: map,
+                center: [76.9036, 43.2220], // Центр Алматы (долгота, широта)
+                zoom: 10
+            });
+
+            const graphicsLayer = new GraphicsLayer();
+            map.add(graphicsLayer);
+
+            // Обработчик загрузки файла
+            document.getElementById("shapefileInput").addEventListener("change", function(event) {
+                const file = event.target.files[0];
+                if (file && file.name.endsWith(".zip")) {
+                    esriRequest("https://utility.arcgis.com/sharing/rest/content/features/generate", {
+                        query: {
+                            filetype: "shapefile",
+                            f: "json",
+                            publishParameters: JSON.stringify({
+                                targetSR: { wkid: 3857 } // Преобразование в Web Mercator
+                            })
+                        },
+                        body: file,
+                        responseType: "json",
+                        method: "post"
+                    }).then(function(response) {
+                        const layers = response.data.featureCollection.layers;
+                        const roadsLayer = layers.find(layer => layer.layerDefinition.name === "roads_a");
+                        if (roadsLayer) {
+                            const features = roadsLayer.featureSet.features;
+                            features.forEach(function(feature) {
+                                const graphic = new Graphic({
+                                    geometry: feature.geometry,
+                                    symbol: {
+                                        type: "simple-line", // Символ для линий (например, дороги)
+                                        color: [255, 0, 0], // Красный цвет
+                                        width: 2
+                                    }
+                                });
+                                graphicsLayer.add(graphic);
+                            });
+                        } else {
+                            console.error("Слой 'roads_a' не найден в загруженном Shapefile.");
+                        }
+                    }).catch(function(error) {
+                        console.error("Ошибка при загрузке Shapefile:", error);
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

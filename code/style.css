@@ -1,0 +1,133 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    background-color: #ffffff;
+    height: 80px;
+    padding: 10px;
+    font-size: 26px;
+    width: 100%;
+    position: absolute;
+    top: 0;
+}
+
+nav ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    margin-left: auto;
+    font-family: Garamond, serif;
+}
+
+nav ul li {
+    margin-right: 20px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #444343;
+}
+
+.logo-container img.logo {
+    width: 50px;
+    height: auto;
+    margin-right: 20px;
+}
+
+h1 {
+    font-family: Garamond, serif;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+    height: calc(100vh - 80px); /* Учитываем высоту заголовка */
+    padding: 2rem;
+    box-sizing: border-box;
+}
+
+.left-panel {
+    flex: 1;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.right-panel {
+    flex: 1;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.slider-container {
+    position: relative;
+    max-width: 500px; /* Установите желаемую максимальную ширину */
+    margin: auto;
+    overflow: hidden;
+    display: flex;
+    align-items: center; /* Центрирование слайдов по вертикали */
+}
+
+.slide {
+    min-width: 80%; /* Уменьшите ширину слайдов для видимости соседних */
+    transition: transform 0.5s ease-in-out;
+    position: relative;
+}
+
+.slide img {
+    width: 100%;
+    height: auto;
+    /* Удалили border-radius для острых углов */
+}
+
+.slide-text {
+    position: absolute;
+    bottom: 10px;
+    left: 20px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #ffffff;
+    padding: 10px;
+    /* Удалили border-radius для острых углов */
+    font-size: 14px; /* Уменьшение размера шрифта текста */
+}
+
+.prev, .next {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto;
+    padding: 8px;
+    margin-top: -16px;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    transition: 0.6s ease;
+    border-radius: 0; /* Удалили border-radius для острых углов */
+    user-select: none;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.next {
+    right: 0;
+    border-radius: 0; /* Удалили border-radius для острых углов */
+}
+
+.prev:hover, .next:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+@media (max-width: 480px) {
+    .slide-text {
+        font-size: 12px; /* Ещё большее уменьшение шрифта для мобильных устройств */
+        padding: 5px;
+    }
+}

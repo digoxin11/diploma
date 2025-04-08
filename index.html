@@ -7,37 +7,53 @@
 
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
+            font-family: 'Segoe UI', sans-serif;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
             height: 100vh;
         }
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1.2em;
+        }
         #map {
-            flex: 1;
+            width: 100%;
+            height: 100%;
         }
         #controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #ecf0f1;
             padding: 10px;
-            background: #f4f4f4;
-            text-align: center;
         }
         #chart-container {
             width: 100%;
-            max-height: 300px;
+            height: 250px;
+        }
+        .slider-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    <div id="controls">
+<header>
+    История пробок в Алматы
+</header>
+<div id="map"></div>
+<div id="controls">
+    <div class="slider-group">
         <label for="timeSlider">Выберите время:</label>
         <input type="range" id="timeSlider" min="0" max="0" step="1" value="0">
         <span id="timestamp"></span>
@@ -45,103 +61,113 @@
     <div id="chart-container">
         <canvas id="trafficChart"></canvas>
     </div>
+</div>
 
-    <script>
-        const map = L.map('map').setView([43.238949, 76.889709], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OSM'
-        }).addTo(map);
+<script>
+    const map = L.map('map').setView([43.238949, 76.889709], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OSM'
+    }).addTo(map);
 
-        let trafficData = [];
-        let polylines = [];
-        let segmentLevelMap = {};
+    let trafficData = [];
+    let polylines = [];
 
-        const segments = [
-            { name: "Сайна", coords: [[43.285041, 76.870444], [43.202004, 76.870233]] },
-            { name: "Аль-Фараби", coords: [[43.234105, 76.976676], [43.234387, 76.825249]] },
-            { name: "Толе Би", coords: [[43.257901, 76.954771], [43.255083, 76.825942]] },
-            { name: "Абая", coords: [[43.244932, 76.954664], [43.243126, 76.829474]] },
-            { name: "Рыскулова", coords: [[43.295579, 76.872802], [43.294279, 76.799025]] },
-            { name: "Момышулы", coords: [[43.271213, 76.851205], [43.179924, 76.853538]] },
-            { name: "Райымбека", coords: [[43.258557, 76.951234], [43.256291, 76.809143]] }
-        ];
+    async function fetchSegments() {
+        const res = await fetch('almaty_street_coords.json');
+        return await res.json();
+    }
 
-        async function fetchData() {
-            const sheetCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW9jOKsyNq9bTevrxxpKLx-a-A7fupIyo5ygzOsoMZwABDorMUM_ymuFLruheNmjyxXawhC0wgkS6z/pub?output=csv';
-            const res = await fetch(sheetCSV);
-            const text = await res.text();
-            const rows = text.trim().split('\n').slice(1);
+    async function fetchTrafficData() {
+        const sheetCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW9jOKsyNq9bTevrxxpKLx-a-A7fupIyo5ygzOsoMZwABDorMUM_ymuFLruheNmjyxXawhC0wgkS6z/pub?output=csv';
+        const res = await fetch(sheetCSV);
+        const text = await res.text();
+        const rows = text.trim().split('\n');
 
-            trafficData = rows.map(row => {
-                const [time, level] = row.split(',');
-                return {
-                    time,
-                    level: parseFloat(level)
-                };
-            });
+        const header = rows[0].split(',');
+        const dataRows = rows.slice(1);
 
-            document.getElementById('timeSlider').max = trafficData.length - 1;
-            updateUI(0);
-            drawChart();
-        }
-
-        function updateUI(index) {
-            const data = trafficData[index];
-            if (!data) return;
-
-            document.getElementById('timestamp').textContent = data.time;
-
-            polylines.forEach(pl => map.removeLayer(pl));
-            polylines = [];
-
-            segments.forEach(segment => {
-                const poly = L.polyline(segment.coords, {
-                    color: getColor(data.level),
-                    weight: 6
-                }).addTo(map);
-                poly.bindTooltip(segment.name, { permanent: false, direction: 'top' });
-                polylines.push(poly);
-            });
-        }
-
-        function getColor(index) {
-            if (index <= 1.2) return 'green';
-            if (index <= 1.5) return 'orange';
-            return 'red';
-        }
-
-        document.getElementById('timeSlider').addEventListener('input', e => {
-            updateUI(e.target.value);
+        return dataRows.map(row => {
+            const values = row.split(',');
+            const entry = { time: values[0], levels: {} };
+            for (let i = 1; i < header.length; i++) {
+                entry.levels[header[i]] = parseFloat(values[i]) || 0;
+            }
+            return entry;
         });
+    }
 
-        function drawChart() {
-            const ctx = document.getElementById('trafficChart').getContext('2d');
-            const labels = trafficData.map(d => d.time);
-            const data = trafficData.map(d => d.level);
+    function getColor(level) {
+        if (level <= 1.2) return 'green';
+        if (level <= 1.5) return 'orange';
+        return 'red';
+    }
 
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Индекс пробок (в среднем)',
-                        data,
-                        borderColor: 'red',
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { display: false },
-                        y: { beginAtZero: true, max: 3 }
-                    }
+    async function render() {
+        const segments = await fetchSegments();
+        trafficData = await fetchTrafficData();
+
+        const slider = document.getElementById('timeSlider');
+        slider.max = trafficData.length - 1;
+        slider.addEventListener('input', () => updateMap(slider.value));
+
+        updateMap(0);
+        drawChart();
+    }
+
+    function updateMap(index) {
+        const data = trafficData[index];
+        document.getElementById('timestamp').textContent = data.time;
+
+        polylines.forEach(p => map.removeLayer(p));
+        polylines = [];
+
+        for (const [street, coords] of Object.entries(segments)) {
+            coords.forEach((coord, idx) => {
+                const level = data.levels[`${street}_${idx}`];
+                if (typeof level !== 'undefined') {
+                    const marker = L.circleMarker([coord[0], coord[1]], {
+                        radius: 5,
+                        color: getColor(level),
+                        fillOpacity: 0.8
+                    }).addTo(map);
+                    marker.bindTooltip(`${street} #${idx}`, { permanent: false });
+                    polylines.push(marker);
                 }
             });
         }
+    }
 
-        fetchData();
-    </script>
+    function drawChart() {
+        const ctx = document.getElementById('trafficChart').getContext('2d');
+        const labels = trafficData.map(d => d.time);
+
+        const avg = trafficData.map(d => {
+            const values = Object.values(d.levels);
+            return values.reduce((a, b) => a + b, 0) / values.length;
+        });
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Средний уровень пробок',
+                    data: avg,
+                    borderColor: 'red',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, max: 3 }
+                }
+            }
+        });
+    }
+
+    render();
+</script>
 </body>
 </html>

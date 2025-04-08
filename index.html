@@ -47,6 +47,16 @@
     #map {
       width: 100%;
       height: 100%;
+      z-index: 0;
+    }
+    .leaflet-tooltip {
+      font-size: 14px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.9);
+      color: #000;
+      border-radius: 4px;
+      padding: 4px 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
     }
     #titleBar {
       position: absolute;
@@ -188,18 +198,17 @@
 
     let trafficData = [];
     let polylines = [];
+    let segments = {};
 
     async function fetchSegments() {
       const res = await fetch('almaty_street_coords.json');
-      return await res.json();
+      segments = await res.json();
     }
 
     async function fetchTrafficData() {
-      const sheetCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW9jOKsyNq9bTevrxxpKLx-a-A7fupIyo5ygzOsoMZwABDorMUM_ymuFLruheNmjyxXawhC0wgkS6z/pub?output=csv';
-      const res = await fetch(sheetCSV);
+      const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRW9jOKsyNq9bTevrxxpKLx-a-A7fupIyo5ygzOsoMZwABDorMUM_ymuFLruheNmjyxXawhC0wgkS6z/pub?output=csv');
       const text = await res.text();
       const rows = text.trim().split('\n');
-
       const header = rows[0].split(',');
       const dataRows = rows.slice(1);
 
@@ -207,7 +216,7 @@
         const values = row.split(',');
         const entry = { time: values[0], levels: {} };
         for (let i = 1; i < header.length; i++) {
-          entry.levels[header[i]] = parseFloat(values[i]) || 0;
+          entry.levels[header[i]] = parseFloat(values[i]) || 1.2;
         }
         return entry;
       });
@@ -219,45 +228,43 @@
       return 'red';
     }
 
-    async function render() {
-      const segments = await fetchSegments();
-      trafficData = await fetchTrafficData();
-
-      const slider = document.getElementById('timeSlider');
-      slider.max = trafficData.length - 1;
-      slider.addEventListener('input', () => updateMap(slider.value, segments));
-
-      updateMap(0, segments);
-      drawChart();
-    }
-
-    function updateMap(index, segments) {
+    function updateMap(index) {
       const data = trafficData[index];
       document.getElementById('timestamp').textContent = data.time;
-
       polylines.forEach(p => map.removeLayer(p));
       polylines = [];
 
       for (const [street, coords] of Object.entries(segments)) {
-        coords.forEach((coord, idx) => {
-          const level = data.levels[`${street}_${idx}`];
-          if (typeof level !== 'undefined') {
-            const marker = L.circleMarker([coord[0], coord[1]], {
-              radius: 5,
-              color: getColor(level),
-              fillOpacity: 0.8
-            }).addTo(map);
-            marker.bindTooltip(`${street} #${idx}`, { permanent: false });
-            polylines.push(marker);
-          }
-        });
+        for (let i = 0; i < coords.length - 1; i++) {
+          const from = coords[i];
+          const to = coords[i + 1];
+          const key = `${street}_${i}`;
+          const level = data.levels[key];
+          const color = street === 'Сайна' ? 'hotpink' : getColor(level);
+
+          const polyline = L.polyline([from, to], {
+            color,
+            weight: 6,
+            opacity: 1,
+            className: 'traffic-line'
+          }).addTo(map);
+
+          polyline.bindTooltip(`${street} (${level})`, { sticky: true });
+          polyline.on('mouseover', function() {
+            this.setStyle({ color: 'yellow', weight: 10 });
+          });
+          polyline.on('mouseout', function() {
+            this.setStyle({ color, weight: 6 });
+          });
+
+          polylines.push(polyline);
+        }
       }
     }
 
     function drawChart() {
       const ctx = document.getElementById('trafficChart').getContext('2d');
       const labels = trafficData.map(d => d.time);
-
       const avg = trafficData.map(d => {
         const values = Object.values(d.levels);
         return values.reduce((a, b) => a + b, 0) / values.length;
@@ -288,11 +295,17 @@
       const overlay = document.getElementById('overlay');
       const content = document.getElementById('overlayContent');
       const isVisible = overlay.classList.toggle('visible');
-      if (isVisible) {
-        content.classList.add('fade-in');
-      } else {
-        content.classList.remove('fade-in');
-      }
+      content.classList.toggle('fade-in', isVisible);
+    }
+
+    async function render() {
+      await fetchSegments();
+      trafficData = await fetchTrafficData();
+      const slider = document.getElementById('timeSlider');
+      slider.max = trafficData.length - 1;
+      slider.addEventListener('input', () => updateMap(slider.value));
+      updateMap(0);
+      drawChart();
     }
 
     render();

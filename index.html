@@ -2,65 +2,146 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <title>История пробок в Алматы</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Пробки в Алматы</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #map {
+            flex: 1;
+        }
+        #controls {
+            padding: 10px;
             background: #f4f4f4;
             text-align: center;
-            padding: 30px;
         }
-        h1 {
-            color: #333;
+        #chart-container {
+            width: 100%;
+            max-height: 300px;
         }
-        #traffic {
-            font-size: 2em;
-            margin-top: 20px;
-            color: #fff;
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 10px;
-        }
-        .low { background-color: green; }
-        .medium { background-color: orange; }
-        .high { background-color: red; }
-        .error { background-color: gray; }
     </style>
 </head>
 <body>
-    <h1>Текущий уровень пробок в Алматы</h1>
-    <div id="traffic" class="error">Загрузка...</div>
+    <div id="map"></div>
+    <div id="controls">
+        <label for="timeSlider">Выберите время:</label>
+        <input type="range" id="timeSlider" min="0" max="0" step="1" value="0">
+        <span id="timestamp"></span>
+    </div>
+    <div id="chart-container">
+        <canvas id="trafficChart"></canvas>
+    </div>
 
     <script>
-        async function fetchTrafficLevel() {
-            try {
-                const response = await fetch("https://raw.githubusercontent.com/yourusername/traffic-data/main/almaty-traffic.json?_=" + Date.now());
-                const data = await response.json();
+        const map = L.map('map').setView([43.238949, 76.889709], 12);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OSM'
+        }).addTo(map);
 
-                const level = parseInt(data.level); // должен быть от 1 до 10
-                const el = document.getElementById("traffic");
+        let trafficData = [];
+        let polylines = [];
+        let segmentLevelMap = {};
 
-                el.textContent = `${level} баллов`;
+        const segments = [
+            { name: "Сайна", coords: [[43.285041, 76.870444], [43.202004, 76.870233]] },
+            { name: "Аль-Фараби", coords: [[43.234105, 76.976676], [43.234387, 76.825249]] },
+            { name: "Толе Би", coords: [[43.257901, 76.954771], [43.255083, 76.825942]] },
+            { name: "Абая", coords: [[43.244932, 76.954664], [43.243126, 76.829474]] },
+            { name: "Рыскулова", coords: [[43.295579, 76.872802], [43.294279, 76.799025]] },
+            { name: "Момышулы", coords: [[43.271213, 76.851205], [43.179924, 76.853538]] },
+            { name: "Райымбека", coords: [[43.258557, 76.951234], [43.256291, 76.809143]] }
+        ];
 
-                if (level <= 3) {
-                    el.className = "low";
-                } else if (level <= 6) {
-                    el.className = "medium";
-                } else {
-                    el.className = "high";
-                }
+        async function fetchData() {
+            const sheetCSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW9jOKsyNq9bTevrxxpKLx-a-A7fupIyo5ygzOsoMZwABDorMUM_ymuFLruheNmjyxXawhC0wgkS6z/pub?output=csv';
+            const res = await fetch(sheetCSV);
+            const text = await res.text();
+            const rows = text.trim().split('\n').slice(1);
 
-            } catch (e) {
-                const el = document.getElementById("traffic");
-                el.textContent = "Ошибка загрузки";
-                el.className = "error";
-                console.error(e);
-            }
+            trafficData = rows.map(row => {
+                const [time, level] = row.split(',');
+                return {
+                    time,
+                    level: parseFloat(level)
+                };
+            });
+
+            document.getElementById('timeSlider').max = trafficData.length - 1;
+            updateUI(0);
+            drawChart();
         }
 
-        fetchTrafficLevel();
-        setInterval(fetchTrafficLevel, 5 * 60 * 1000); // обновление каждые 5 мин
+        function updateUI(index) {
+            const data = trafficData[index];
+            if (!data) return;
+
+            document.getElementById('timestamp').textContent = data.time;
+
+            polylines.forEach(pl => map.removeLayer(pl));
+            polylines = [];
+
+            segments.forEach(segment => {
+                const poly = L.polyline(segment.coords, {
+                    color: getColor(data.level),
+                    weight: 6
+                }).addTo(map);
+                poly.bindTooltip(segment.name, { permanent: false, direction: 'top' });
+                polylines.push(poly);
+            });
+        }
+
+        function getColor(index) {
+            if (index <= 1.2) return 'green';
+            if (index <= 1.5) return 'orange';
+            return 'red';
+        }
+
+        document.getElementById('timeSlider').addEventListener('input', e => {
+            updateUI(e.target.value);
+        });
+
+        function drawChart() {
+            const ctx = document.getElementById('trafficChart').getContext('2d');
+            const labels = trafficData.map(d => d.time);
+            const data = trafficData.map(d => d.level);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Индекс пробок (в среднем)',
+                        data,
+                        borderColor: 'red',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { display: false },
+                        y: { beginAtZero: true, max: 3 }
+                    }
+                }
+            });
+        }
+
+        fetchData();
     </script>
 </body>
 </html>

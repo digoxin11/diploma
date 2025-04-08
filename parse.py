@@ -1,13 +1,15 @@
 import requests
 import time
+import io
+import json
+from PIL import Image
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-from PIL import Image
-import io
-import json
 
 # Улицы с координатами сегментов
 streets = {
@@ -27,19 +29,20 @@ options = Options()
 options.add_argument('--headless=new')
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-options.add_argument('--window-size=1280,800')
+options.add_argument('--window-size=1920,1080')
 
 browser = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+wait = WebDriverWait(browser, 15)
 
 traffic_data = {}
 
 for name, (lat, lon) in streets.items():
     url = f"https://yandex.kz/maps/162/almaty/?ll={lon}%2C{lat}&z=15&layer=traffic"
     browser.get(url)
-    time.sleep(7)
-
     try:
-        canvas = browser.find_element(By.TAG_NAME, "canvas")
+        # Явное ожидание появления канваса
+        canvas = wait.until(EC.presence_of_element_located((By.TAG_NAME, "canvas")))
+        time.sleep(2)  # дополнительная пауза для прорисовки
         screenshot = canvas.screenshot_as_png
         image = Image.open(io.BytesIO(screenshot))
         width, height = image.size

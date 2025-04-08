@@ -251,10 +251,10 @@
 
           polyline.bindTooltip(`${street} (${level})`, { sticky: true });
           polyline.on('mouseover', function() {
-            this.setStyle({ color: 'yellow', weight: 10 });
+            this.setStyle({ color: 'yellow', weight: 100 });
           });
           polyline.on('mouseout', function() {
-            this.setStyle({ color, weight: 6 });
+            this.setStyle({ color, weight: 50 });
           });
 
           polylines.push(polyline);

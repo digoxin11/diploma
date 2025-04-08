@@ -76,9 +76,9 @@ for name, path in street_paths.items():
 
 browser.quit()
 
-print("\n\u041e\u0442\u043f\u0440\u0430\u0432\u043a\u0430:")
-for segment, value in traffic_data.items():
-    print(f"{segment}: {value}")
+##print("\n\u041e\u0442\u043f\u0440\u0430\u0432\u043a\u0430:")
+##for segment, value in traffic_data.items():
+##    print(f"{segment}: {value}")
 
 headers = {'Content-Type': 'application/json'}
 response = requests.post(GOOGLE_SCRIPT_URL, headers=headers, json=traffic_data)

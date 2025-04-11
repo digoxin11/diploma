@@ -167,18 +167,22 @@
       flex-wrap: wrap;
       justify-content: center;
     }
-    /* Стандартный стиль для линий */
+
+    /* Базовый стиль для линий */
     .traffic-line {
-      /* Можно задать скругление краёв */
       stroke-linecap: round;
+      transition: stroke 0.3s ease;
     }
-    /* Яркое свечение для выделенных улиц */
+
+    /* Яркое свечение (усиленное) */
     .traffic-line-bright {
       /*
-       * Применяем эффект свечения.
-       * При желании можно скорректировать radius, цвет и прозрачность.
+       * Несколько теней подряд делают эффект более мощным.
+       * Первая — контрастная, вторая чуть мягче.
        */
-      filter: drop-shadow(0 0 6px rgba(255, 255, 0, 0.8));
+      filter:
+        drop-shadow(0 0 10px rgba(255, 255, 0, 1))
+        drop-shadow(0 0 20px rgba(255, 255, 0, 0.8));
     }
   </style>
 </head>
@@ -199,6 +203,9 @@
       <input type="range" id="timeSlider" min="0" max="0" step="1" value="0" />
       <span id="timestamp"></span>
     </div>
+    <!-- Кнопка для переключения режима подсветки -->
+    <button id="highlightBtn" onclick="toggleHighlight()">Выключить подсветку</button>
+
     <div id="chart-container">
       <canvas id="trafficChart"></canvas>
     </div>
@@ -213,13 +220,15 @@
     let polylines = [];
     let segments = {};
 
+    // Глобальная переменная: включена ли яркая подсветка исследуемых улиц
+    let highlightActive = true;
+
     async function fetchSegments() {
       const res = await fetch('almaty_street_coords.json');
       segments = await res.json();
     }
 
     async function fetchTrafficData() {
-      // Для простоты оставим тот же код
       const res = await fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vRW9jOKsyNq9bTevrxxpKLx-a-A7fupIyo5ygzOsoMZwABDorMUM_ymuFLruheNmjyxXawhC0wgkS6z/pub?output=csv');
       const text = await res.text();
       const rows = text.trim().split('\n');
@@ -236,31 +245,30 @@
       });
     }
 
-    // Функция выбора базового цвета для линии
+    // Функция выбора базового цвета линии по уровню
     function getBaseColor(level) {
       if (level <= 1.2) return 'green';
       if (level <= 1.5) return 'orange';
       return 'red';
     }
 
-    // При необходимости можно через аргумент street задать,
-    // какие именно улицы делать "яркими"
+    // Определяем, какие улицы считаются "исследуемыми"
+    const researchStreets = ['Сайна', 'Райымбека', 'Толе би'];
+
     function getPolylineStyle(street, level) {
       const baseColor = getBaseColor(level);
-
-      // Если хотим ярко подсвечивать все улицы исследования (например, Сайна, Райымбека и т.д.),
-      // Можно создать массив или список "исследуемых" улиц:
-      const researchStreets = ['Сайна', 'Райымбека', 'Толе би']; 
       const isResearchStreet = researchStreets.includes(street);
+
+      // Если подсветка включена и улица исследуемая, применяем класс "traffic-line-bright"
+      const lineClass = isResearchStreet && highlightActive
+        ? 'traffic-line traffic-line-bright'
+        : 'traffic-line';
 
       return {
         color: baseColor,
-        weight: isResearchStreet ? 10 : 6,           // толще на исследуемых улицах
+        weight: isResearchStreet ? 10 : 6,
         opacity: 1,
-        // Добавим класс для эффекта свечения, если улица исследуемая
-        className: isResearchStreet 
-          ? 'traffic-line traffic-line-bright' 
-          : 'traffic-line'
+        className: lineClass
       };
     }
 
@@ -268,37 +276,47 @@
       const data = trafficData[index];
       document.getElementById('timestamp').textContent = data.time;
 
-      // Удаляем предыдущие поли-линии
+      // Удаляем предыдущие линии
       polylines.forEach(p => map.removeLayer(p));
       polylines = [];
 
       for (const [street, coords] of Object.entries(segments)) {
+        // перебираем сегменты улицы
         for (let i = 0; i < coords.length - 1; i++) {
           const from = coords[i];
           const to = coords[i + 1];
           const key = `${street}_${i}`;
           const level = data.levels[key];
 
-          // Получаем стиль
           const style = getPolylineStyle(street, level);
-
           const polyline = L.polyline([from, to], style).addTo(map);
 
-          // Tooltip с названием улицы и уровнем пробок
-          polyline.bindTooltip(`${street} (ур. ${level})`, { sticky: true });
+          polyline.bindTooltip(`${street} (уровень ${level})`, { sticky: true });
 
-          // При наведении меняем стиль (временно), чтобы визуально "подсветить"
+          // Эффект при наведении
           polyline.on('mouseover', function() {
-            this.setStyle({ weight: style.weight + 4, opacity: 1 });
+            this.setStyle({ weight: style.weight + 4 });
           });
-          // При уходе мыши возвращаем исходный стиль
           polyline.on('mouseout', function() {
-            this.setStyle({ weight: style.weight, opacity: 1 });
+            this.setStyle({ weight: style.weight });
           });
 
           polylines.push(polyline);
         }
       }
+    }
+
+    // Переключатель режима подсветки
+    function toggleHighlight() {
+      highlightActive = !highlightActive;
+      const btn = document.getElementById('highlightBtn');
+      btn.textContent = highlightActive
+        ? 'Выключить подсветку'
+        : 'Включить подсветку';
+
+      // Перерисовываем линии с учётом обновлённого highlightActive
+      const slider = document.getElementById('timeSlider');
+      updateMap(slider.value);
     }
 
     function drawChart() {
@@ -340,6 +358,7 @@
     async function render() {
       await fetchSegments();
       trafficData = await fetchTrafficData();
+
       const slider = document.getElementById('timeSlider');
       slider.max = trafficData.length - 1;
       slider.addEventListener('input', () => updateMap(slider.value));

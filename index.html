@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>История пробок в Алматы</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    :root {
-      color-scheme: light dark;
-    }
+    :root { color-scheme: light dark; }
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
@@ -19,10 +19,7 @@
       background-color: var(--background, #fff);
       color: var(--text-color, #000);
     }
-    #map {
-      width: 100%;
-      height: 100%;
-    }
+    #map { width: 100%; height: 100%; z-index: 0; }
     #titleBar {
       position: absolute;
       top: 20px;
@@ -37,9 +34,7 @@
       font-weight: 600;
       transition: background 0.3s;
     }
-    #titleBar:hover {
-      background: rgba(0, 0, 0, 0.7);
-    }
+    #titleBar:hover { background: rgba(0, 0, 0, 0.7); }
     #controls {
       background: rgba(255, 255, 255, 0.7);
       padding: 12px 20px;
@@ -61,48 +56,42 @@
   <div id="map"></div>
   <div id="titleBar" onclick="toggleOverlay()">История пробок</div>
   <div id="controls">
-    <p>Показать измерения (один общий timestamp)</p>
+    <div>
+      <label for="timeSlider">Выберите время:</label>
+      <input type="range" id="timeSlider" min="0" max="0" step="1" value="0" />
+      <span id="timestamp"></span>
+    </div>
   </div>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // Инициализация карты (используем начальный центр Алматы и зум 12 – можно корректировать)
+    // Инициализация карты Leaflet
     const map = L.map('map').setView([43.238949, 76.889709], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OSM'
     }).addTo(map);
 
-    let segments = {};   // Сегменты, полученные из заголовка CSV
-    let measurements = {}; // Измерения для каждого сегмента; ожидается один общий timestamp
+    let measurementData = []; // Массив измерений из CSV
+    let segments = {};  // Объект сегментов, ключ — идентификатор, значение: { street, start: [lat, lon], end: [lat, lon] }
+    let polylines = [];
 
-    /**
-     * Функция перевода уровня трафика (1-10) в цвет.
-     * Уровень 1 => красный, уровень 10 => зеленый.
-     */
+    // Функция, которая переводит уровень трафика (от 1 до 10) в цвет (переход от красного к зелёному)
     function levelToColor(level) {
-      // Переход от красного (hue 0) к зеленому (hue 120)
-      const hue = (level - 1) * (120 / 9);
+      const hue = (level - 1) * (120 / 9); // level 1 -> hue 0, level 10 -> hue 120
       return `hsl(${hue}, 100%, 50%)`;
     }
 
-    /**
-     * Чтение CSV-файла с измерениями.
-     * CSV должен быть доступен по URL (например, all_segments_measurements.csv).
-     * Формат:
-     * timestamp,SegmentID1,SegmentID2,SegmentID3,...
-     * 1744367711183,5,6,3,...
-     */
+    // Функция для преобразования CSV-строки в массив измерений
     async function fetchMeasurements() {
       try {
         const response = await fetch('all_segments_measurements.csv');
         const text = await response.text();
         const lines = text.trim().split("\n");
         if (lines.length < 2) {
-          console.error("CSV содержит менее двух строк.");
+          console.error("CSV содержит меньше двух строк.");
           return;
         }
         const header = lines[0].split(",");
-        // Из заголовка формируем segments:
-        // Каждый идентификатор имеет формат: "StreetName_startLat_startLon_endLat_endLon"
+        // Из заголовка формируем объект segments:
+        // Каждый идентификатор имеет формат "StreetName_startLat_startLon_endLat_endLon"
         header.slice(1).forEach(id => {
           const parts = id.split("_");
           if (parts.length >= 5) {
@@ -112,60 +101,59 @@
             const s_lon = parseFloat(parts[parts.length - 3]);
             const e_lat = parseFloat(parts[parts.length - 2]);
             const e_lon = parseFloat(parts[parts.length - 1]);
-            segments[id] = {
-              street: street,
-              start: [s_lat, s_lon],
-              end: [e_lat, e_lon]
-            };
+            segments[id] = { street, start: [s_lat, s_lon], end: [e_lat, e_lon] };
           }
         });
-        // Читаем измерения – предполагаем, что имеется ровно одна строка измерений
-        const values = lines[1].split(",");
-        measurements.timestamp = values[0];
-        // Для каждого сегмента запоминаем его измерение
-        header.slice(1).forEach((id, index) => {
-          measurements[id] = parseFloat(values[index + 1]);
+        // Теперь формируем массив измерений: для каждой строки создаем объект со свойствами из заголовка
+        measurementData = lines.slice(1).map(line => {
+          const values = line.split(",");
+          const obj = { timestamp: values[0] };
+          header.slice(1).forEach((id, index) => {
+            obj[id] = parseFloat(values[index + 1]);
+          });
+          return obj;
         });
-        console.log("Измерения загружены:", measurements);
+        console.log("Измерения загружены:", measurementData);
+        document.getElementById("timeSlider").max = measurementData.length - 1;
       } catch (e) {
         console.error("Ошибка загрузки CSV:", e);
       }
     }
 
-    function drawSegments() {
-      // Удаляем ранее нарисованные линии (если есть)
-      map.eachLayer(layer => {
-        if (layer.options && layer.options.className === 'traffic-segment') {
-          map.removeLayer(layer);
-        }
-      });
-      // Для каждого сегмента рисуем линию на карте с цветом, соответствующим измерению
+    // Функция для обновления отображения на карте на основе выбранного измерения
+    function updateMap(index) {
+      const measurement = measurementData[index];
+      document.getElementById("timestamp").textContent = measurement.timestamp;
+      // Удаляем предыдущие линии
+      polylines.forEach(poly => map.removeLayer(poly));
+      polylines = [];
+      // Для каждого сегмента создаем линию с цветом, соответствующим измеренному уровню трафика
       for (const segId in segments) {
         if (!segments.hasOwnProperty(segId)) continue;
         const seg = segments[segId];
-        const level = measurements[segId];
-        const color = levelToColor(level);
+        const trafficLevel = measurement[segId];
+        const color = levelToColor(trafficLevel);
         const polyline = L.polyline([seg.start, seg.end], {
           color: color,
           weight: 6,
-          opacity: 1,
-          className: 'traffic-segment'
+          opacity: 1
         }).addTo(map);
-        polyline.bindTooltip(`${seg.street} (уровень ${level})`, { sticky: true });
+        polyline.bindTooltip(`${seg.street} (уровень ${trafficLevel})`, { sticky: true });
+        polylines.push(polyline);
       }
     }
 
+    // Функция переключения наложения (если нужно)
     function toggleOverlay() {
-      // Можно добавить логику скрытия/показа контролов
+      // Пример: можно скрывать/показывать контролы или информационные панели.
     }
 
     async function render() {
       await fetchMeasurements();
-      console.log("Segments:", segments);
-      console.log("Measurements:", measurements);
-      // При этом один общий timestamp для всех измерений (из CSV)
-      // Обновляем карту
-      drawSegments();
+      const slider = document.getElementById("timeSlider");
+      slider.addEventListener("input", () => updateMap(slider.value));
+      // Вызываем начальное отображение (первое измерение)
+      updateMap(0);
     }
 
     render();

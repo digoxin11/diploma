@@ -1,0 +1,9 @@
+proxy:
+  host: "https://traffic-jams.2gis.com"
+  worker:
+    processes: 1
+    connections: 100
+
+ingress:
+  hosts:
+    - host: traffic-proxy.local

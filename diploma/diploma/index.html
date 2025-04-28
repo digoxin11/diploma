@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Пробки Алматы по улицам</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet/dist/leaflet.css"
+  />
+  <style>
+    html, body, #map { height:100%; margin:0; padding:0 }
+    #timeSliderContainer {
+      position:absolute; top:10px; left:50px;
+      z-index:1000; background:#fff;
+      padding:8px 12px; border-radius:6px;
+      box-shadow:0 0 6px rgba(0,0,0,0.3);
+      font-family:sans-serif;
+    }
+    #timeLabel { margin-left:8px; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="timeSliderContainer">
+    <input type="range" id="timeSlider" min="0" max="0" step="1" value="0"/>
+    <span id="timeLabel"></span>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="traffic_data.js"></script>
+  <script>
+    // Инициализация карты
+    const map = L.map('map').setView([43.2396, 76.8897], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OSM'
+    }).addTo(map);
+
+    // Жёстко зашитые сегменты улиц (ровно ваши 80 точек)
+    const streetSegments = {
+      "Абая": [
+        [43.2396, 76.7982],[43.239578,76.815811],[43.239556,76.833422],
+        [43.239533,76.851033],[43.239511,76.868644],[43.239489,76.886256],
+        [43.239467,76.903867],[43.239444,76.921478],[43.239422,76.939089],
+        [43.2394,76.9567]
+      ],
+      "Саина": [
+        [43.3141,76.8673],[43.2963,76.8673],[43.2785,76.8673],[43.2607,76.8673],
+        [43.2429,76.8673],[43.2251,76.8673],[43.2073,76.8673],[43.1895,76.8673],
+        [43.1794,76.8673]
+      ],
+      "Аль-Фараби": [
+        [43.2065,76.8415],[43.2127,76.863625],[43.2189,76.88575],
+        [43.2251,76.907875],[43.2313,76.93],[43.2375,76.952125],[43.2435,76.974]
+      ],
+      "Толе би": [
+        [43.2554,76.7987],[43.2554,76.817025],[43.2554,76.83535],
+        [43.2554,76.853675],[43.2553,76.872],[43.2553,76.890325],
+        [43.2553,76.90865],[43.2553,76.926975],[43.2553,76.9453],
+        [43.2553,76.9575]
+      ],
+      "Момышулы": [
+        [43.3312,76.8428],[43.3083,76.8428],[43.2854,76.8428],
+        [43.2625,76.8428],[43.2396,76.8428],[43.2167,76.8428],
+        [43.1938,76.8428],[43.1742,76.8428]
+      ],
+      "Райымбека": [
+        [43.2672,76.7974],[43.2672,76.815475],[43.2672,76.83355],
+        [43.2672,76.851625],[43.2672,76.8697],[43.2672,76.887775],
+        [43.2672,76.90585],[43.2672,76.923925],[43.2672,76.942],
+        [43.2671,76.9575]
+      ],
+      "Жандосова": [
+        [43.2454,76.7987],[43.2454,76.817025],[43.2454,76.83535],
+        [43.2453,76.853675],[43.2453,76.872],[43.2453,76.890325],
+        [43.2453,76.90865],[43.2452,76.926975],[43.2452,76.9453],
+        [43.2452,76.9569]
+      ],
+      "Тимирязева": [
+        [43.2352,76.8013],[43.2352,76.81872],[43.2352,76.83614],
+        [43.2352,76.85356],[43.2352,76.87098],[43.2352,76.8884],
+        [43.2352,76.90582],[43.2352,76.92324],[43.2352,76.94066],
+        [43.2352,76.9585]
+      ]
+    };
+
+    // Подготовка данных по времени
+    const hours = Object.keys(trafficData).sort();
+    const slider = document.getElementById('timeSlider');
+    const label = document.getElementById('timeLabel');
+    slider.max = Math.max(hours.length - 1, 0);
+
+    let currentLayer;
+
+    function drawHour(idx) {
+      if (currentLayer) currentLayer.remove();
+      currentLayer = L.layerGroup().addTo(map);
+
+      const hour = hours[idx] || 'Нет данных';
+      label.innerText = hour;
+
+      // карта для быстрого поиска по координатам
+      const dataMap = {};
+      if (trafficData[hour]) {
+        trafficData[hour].forEach(p => {
+          dataMap[`${p.lat}_${p.lon}`] = p.color;
+        });
+      }
+
+      // рисуем каждую улицу по сегментам
+      for (const coords of Object.values(streetSegments)) {
+        for (let i = 0; i < coords.length - 1; i++) {
+          const [lat1, lon1] = coords[i];
+          const [lat2, lon2] = coords[i + 1];
+          const key = `${lat1}_${lon1}`;
+          const color = dataMap[key] || '#888';
+          L.polyline([[lat1, lon1], [lat2, lon2]], {
+            color: color,
+            weight: 6,
+            opacity: 0.7
+          }).addTo(currentLayer);
+        }
+      }
+    }
+
+    slider.addEventListener('input', () => drawHour(+slider.value));
+    if (hours.length) drawHour(0);
+    else label.innerText = 'Нет данных';
+
+  </script>
+</body>
+</html>

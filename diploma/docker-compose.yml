@@ -1,0 +1,10 @@
+version: '3.7'
+
+services:
+  traffic-proxy:
+    image: 2gis-on-premise/traffic-proxy:latest
+    ports:
+      - "8080:80"
+    environment:
+      PROXY_HOST: "https://traffic-jams.2gis.com"
+      API_KEY: "08101265-79e2-4f69-90e9-1ed6e35d6227"

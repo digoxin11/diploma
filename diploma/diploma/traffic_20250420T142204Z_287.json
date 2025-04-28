@@ -1,0 +1,88 @@
+{
+  "flowSegmentData": {
+    "frc": "FRC1",
+    "currentSpeed": 44,
+    "freeFlowSpeed": 44,
+    "currentTravelTime": 48,
+    "freeFlowTravelTime": 48,
+    "confidence": 1,
+    "roadClosure": false,
+    "coordinates": {
+      "coordinate": [
+        {
+          "latitude": 43.234563345783485,
+          "longitude": 76.80121285300726
+        },
+        {
+          "latitude": 43.234800712052134,
+          "longitude": 76.80209395866893
+        },
+        {
+          "latitude": 43.23497640035686,
+          "longitude": 76.80261296611343
+        },
+        {
+          "latitude": 43.23524729033398,
+          "longitude": 76.80334520917467
+        },
+        {
+          "latitude": 43.23529559362764,
+          "longitude": 76.80347395520738
+        },
+        {
+          "latitude": 43.23548605845422,
+          "longitude": 76.80398357492032
+        },
+        {
+          "latitude": 43.23558529045403,
+          "longitude": 76.80410695653501
+        },
+        {
+          "latitude": 43.23565637099952,
+          "longitude": 76.80416864734241
+        },
+        {
+          "latitude": 43.23573813795058,
+          "longitude": 76.80419278722354
+        },
+        {
+          "latitude": 43.23582130929978,
+          "longitude": 76.80417535286495
+        },
+        {
+          "latitude": 43.235946005045356,
+          "longitude": 76.8040881810719
+        },
+        {
+          "latitude": 43.23599027746953,
+          "longitude": 76.80396479945722
+        },
+        {
+          "latitude": 43.236005055292246,
+          "longitude": 76.8038172779614
+        },
+        {
+          "latitude": 43.23598490371495,
+          "longitude": 76.80367377977905
+        },
+        {
+          "latitude": 43.23592860139395,
+          "longitude": 76.80351150613359
+        },
+        {
+          "latitude": 43.23547665430552,
+          "longitude": 76.80254188757448
+        },
+        {
+          "latitude": 43.235152088155075,
+          "longitude": 76.80186597090255
+        },
+        {
+          "latitude": 43.23469207450491,
+          "longitude": 76.80113238673681
+        }
+      ]
+    },
+    "@version": "traffic-service-flow 1.0.136"
+  }
+}

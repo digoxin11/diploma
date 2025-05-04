@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Трафик Алматы по времени</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    iframe { width: 100%; height: 600px; border: none; }
+  </style>
+</head>
+<body>
+  <h1>Карта пробок по времени</h1>
+  <select id="timeSelector">
+    <option value="maps/map_00.html">00:00</option>
+<option value="maps/map_01.html">01:00</option>
+<option value="maps/map_02.html">02:00</option>
+<option value="maps/map_03.html">03:00</option>
+<option value="maps/map_04.html">04:00</option>
+<option value="maps/map_05.html">05:00</option>
+<option value="maps/map_06.html">06:00</option>
+<option value="maps/map_07.html">07:00</option>
+<option value="maps/map_08.html">08:00</option>
+<option value="maps/map_09.html">09:00</option>
+<option value="maps/map_10.html">10:00</option>
+<option value="maps/map_11.html">11:00</option>
+<option value="maps/map_12.html">12:00</option>
+<option value="maps/map_13.html">13:00</option>
+<option value="maps/map_14.html">14:00</option>
+<option value="maps/map_15.html">15:00</option>
+<option value="maps/map_16.html">16:00</option>
+<option value="maps/map_17.html">17:00</option>
+<option value="maps/map_18.html">18:00</option>
+<option value="maps/map_19.html">19:00</option>
+<option value="maps/map_20.html">20:00</option>
+<option value="maps/map_21.html">21:00</option>
+<option value="maps/map_22.html">22:00</option>
+<option value="maps/map_23.html">23:00</option>
+  </select>
+
+  <iframe id="mapFrame" src="maps/map_00.html"></iframe>
+
+  <script>
+    document.getElementById("timeSelector").addEventListener("change", function () {
+      document.getElementById("mapFrame").src = this.value;
+    });
+  </script>
+</body>
+</html>

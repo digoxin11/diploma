@@ -145,6 +145,6 @@ def main():
 
     print("\n🛠 Строим карту через pydeck...")
     create_pydeck_map(df)
-
+z
 if __name__ == "__main__":
     main()

@@ -1,81 +1,63 @@
-import osmnx as ox
-import geopandas as gpd
-import shapely
-from shapely.geometry import LineString
+import os
+import json
 import random
-from datetime import datetime, timedelta
 from pathlib import Path
 
-# Настройки
-city_name = "Almaty, Kazakhstan"
-segment_length = 75  # метров
-output_dir = Path("almaty_traffic_segmented")
-output_dir.mkdir(exist_ok=True)
+# Папка с исходными GeoJSON
+input_dir = Path("almaty_traffic_segmented")
+output_dir = Path("almaty_traffic_segmented_realistic")
+output_dir.mkdir(parents=True, exist_ok=True)
 
-# Получаем границы города
-boundary = ox.geocode_to_gdf(city_name)
-graph = ox.graph_from_polygon(boundary.geometry[0], network_type='drive')
-edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
+def classify_road(feature):
+    name_raw = feature["properties"].get("name", "")
+    name = name_raw[0].lower() if isinstance(name_raw, list) and name_raw else str(name_raw).lower()
+    highway = feature["properties"].get("highway", "")
+    if any(key in name for key in ["абая", "райымбек", "толеби", "сейфуллин", "аль-фараби"]):
+        return "central"
+    elif highway in ["primary", "secondary", "tertiary"]:
+        return "medium"
+    else:
+        return "peripheral"
 
-# Фильтрация дорог
-valid_types = ['motorway', 'trunk', 'primary', 'secondary', 'tertiary', 'residential']
-edges = edges[edges['highway'].apply(lambda x: any(t in valid_types for t in (x if isinstance(x, list) else [x])))]
+def simulate_speed(road_class, hour):
+    ffs = random.uniform(30, 50) if road_class == "central" else random.uniform(40, 60) if road_class == "medium" else random.uniform(50, 70)
 
-edges = edges[['geometry', 'name', 'length']].reset_index(drop=True)
+    if hour in range(7, 10) or hour in range(17, 20):
+        ratio = {"central": random.uniform(0.25, 0.55),
+                 "medium": random.uniform(0.4, 0.75),
+                 "peripheral": random.uniform(0.6, 0.9)}[road_class]
+    elif hour in range(12, 14):
+        ratio = random.uniform(0.7, 0.9)
+    elif hour in range(0, 6) or hour in range(22, 24):
+        ratio = random.uniform(0.9, 1.1)
+    else:
+        ratio = random.uniform(0.8, 1.0)
 
-# ✂ Функция разбиения LineString
-def split_line(line, max_len):
-    if line.length <= max_len:
-        return [line]
-    segments = []
-    current = 0.0
-    while current < line.length:
-        end = min(current + max_len, line.length)
-        segment = shapely.ops.substring(line, current, end)
-        segments.append(segment)
-        current = end
-    return segments
+    speed = max(5, min(ffs * ratio, ffs))
+    return round(speed, 1), round(ffs, 1)
 
-# Разбиваем все улицы на сегменты
-print("📏 Разбиваем улицы на короткие участки...")
-split_geoms = []
-for idx, row in edges.iterrows():
-    geom = row.geometry
-    name = row.get('name', 'noname')
-    try:
-        pieces = split_line(geom, segment_length / 111000)  # перевод метров в градусы
-        for p in pieces:
-            split_geoms.append({'geometry': p, 'name': name})
-    except Exception:
+# Обработка всех 24 часов
+for hour in range(24):
+    filename = f"almaty_traffic_segmented_{hour:02}.geojson"
+    path = input_dir / filename
+
+    if not path.exists():
+        print(f"⛔ Пропущено: {filename} не найден")
         continue
 
-segmented = gpd.GeoDataFrame(split_geoms, crs="EPSG:4326")
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
 
-# Модель генерации скорости
-def generate_speed(hour, length_m):
-    if 7 <= hour <= 9 or 17 <= hour <= 19:
-        base = random.uniform(8, 20)
-    elif 10 <= hour <= 16:
-        base = random.uniform(25, 40)
-    else:
-        base = random.uniform(40, 60)
-    noise = random.uniform(-5, 5)
-    return round(max(5, min(70, base + noise - length_m / 100)), 1)
+    for feature in data["features"]:
+        road_class = classify_road(feature)
+        speed, ffs = simulate_speed(road_class, hour)
+        feature["properties"]["speed_kmph"] = speed
+        feature["properties"]["freeFlowSpeed"] = ffs
 
-# Временные слои
-start_time = datetime(2025, 5, 2, 0, 0)
-time_steps = [start_time + timedelta(hours=h) for h in range(24)]
+    out_path = output_dir / filename
+    with open(out_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False)
 
-# Генерация файлов
-print("🚦 Генерируем 24 слоя...")
-for ts in time_steps:
-    hour = ts.hour
-    df = segmented.copy()
-    df['timestamp'] = ts.strftime('%Y-%m-%d %H:%M:%S')
-    df['length'] = df.geometry.length * 111000  # градусы в метры
-    df['speed_kmph'] = df['length'].apply(lambda l: generate_speed(hour, l))
-    df['freeFlowSpeed'] = df['speed_kmph'] * random.uniform(1.15, 1.25)
-    out_file = output_dir / f"almaty_traffic_segmented_{hour:02}.geojson"
-    df[['timestamp', 'name', 'length', 'speed_kmph', 'freeFlowSpeed', 'geometry']].to_file(out_file, driver="GeoJSON")
+    print(f"✅ Сгенерировано: {filename}")
 
-print("✅ Готово! 24 сегментированных GeoJSON сохранены в almaty_traffic_segmented/")
+

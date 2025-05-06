@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Трафик Алматы по времени</title>
+  <title>Сегментированный трафик Алматы</title>
   <style>
     body { font-family: sans-serif; padding: 1rem; }
     iframe { width: 100%; height: 600px; border: none; }
@@ -11,33 +11,33 @@
 <body>
   <h1>Карта пробок по времени</h1>
   <select id="timeSelector">
-    <option value="maps/map_00.html">00:00</option>
-<option value="maps/map_01.html">01:00</option>
-<option value="maps/map_02.html">02:00</option>
-<option value="maps/map_03.html">03:00</option>
-<option value="maps/map_04.html">04:00</option>
-<option value="maps/map_05.html">05:00</option>
-<option value="maps/map_06.html">06:00</option>
-<option value="maps/map_07.html">07:00</option>
-<option value="maps/map_08.html">08:00</option>
-<option value="maps/map_09.html">09:00</option>
-<option value="maps/map_10.html">10:00</option>
-<option value="maps/map_11.html">11:00</option>
-<option value="maps/map_12.html">12:00</option>
-<option value="maps/map_13.html">13:00</option>
-<option value="maps/map_14.html">14:00</option>
-<option value="maps/map_15.html">15:00</option>
-<option value="maps/map_16.html">16:00</option>
-<option value="maps/map_17.html">17:00</option>
-<option value="maps/map_18.html">18:00</option>
-<option value="maps/map_19.html">19:00</option>
-<option value="maps/map_20.html">20:00</option>
-<option value="maps/map_21.html">21:00</option>
-<option value="maps/map_22.html">22:00</option>
-<option value="maps/map_23.html">23:00</option>
+    <option value="maps/map00.html">00:00</option>
+<option value="maps/map01.html">01:00</option>
+<option value="maps/map02.html">02:00</option>
+<option value="maps/map03.html">03:00</option>
+<option value="maps/map04.html">04:00</option>
+<option value="maps/map05.html">05:00</option>
+<option value="maps/map06.html">06:00</option>
+<option value="maps/map07.html">07:00</option>
+<option value="maps/map08.html">08:00</option>
+<option value="maps/map09.html">09:00</option>
+<option value="maps/map10.html">10:00</option>
+<option value="maps/map11.html">11:00</option>
+<option value="maps/map12.html">12:00</option>
+<option value="maps/map13.html">13:00</option>
+<option value="maps/map14.html">14:00</option>
+<option value="maps/map15.html">15:00</option>
+<option value="maps/map16.html">16:00</option>
+<option value="maps/map17.html">17:00</option>
+<option value="maps/map18.html">18:00</option>
+<option value="maps/map19.html">19:00</option>
+<option value="maps/map20.html">20:00</option>
+<option value="maps/map21.html">21:00</option>
+<option value="maps/map22.html">22:00</option>
+<option value="maps/map23.html">23:00</option>
   </select>
 
-  <iframe id="mapFrame" src="maps/map_00.html"></iframe>
+  <iframe id="mapFrame" src="maps/map00.html"></iframe>
 
   <script>
     document.getElementById("timeSelector").addEventListener("change", function () {

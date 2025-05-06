@@ -1,0 +1,111 @@
+.container {
+    background-color: #fdf8f8;
+    height: 80px;
+    padding: 10px 20px;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .left-header {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* Расстояние между элементами */
+  }
+  
+  .logo {
+    width: 50px;
+    height: auto;
+  }
+  
+  nav ul {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    font-family: "Courier New", monospace;
+  }
+  
+  nav ul li {
+    margin-right: 20px;
+  }
+  
+  nav ul li a {
+    text-decoration: none;
+    color: rgb(172, 49, 116);
+  }
+  
+  .social-icons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .social-logo {
+    width: 30px;
+    height: 30px;
+    transition: transform 0.2s ease;
+  }
+  
+  .social-logo:hover {
+    transform: scale(1.2);
+  }
+
+  .background {
+    background-image: url('замок.jpg');
+    background-size: contain;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat; /* Отключает повторение фонового изображения */
+    height: 1000px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .center-panel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+  }
+  
+  .play-button {
+    display: inline-block;
+    padding: 20px 40px;
+    background-color: rgb(202, 76, 135);
+    font-size: 40px;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    animation: pulse 2s infinite alternate;
+    font-family: "Courier New", monospace; /* Используйте мультяшный шрифт */
+    color: white;
+    margin-right: -700px;
+  }
+  
+  .play-button:hover {
+    background-color: #108594;
+  }
+  
+  @keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    100% {
+        transform: scale(1.1);
+    }
+  }
+  
+  .left-panel .text-box {
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    transform: translateY(-50%);
+    padding: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    font-size: 18px; 
+    font-family: "Courier New", monospace;
+  }

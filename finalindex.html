@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.16/mediaelement-and-player.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.16/mediaelementplayer.min.css" />
+    <title>Сегментированный трафик Алматы</title>
+  
+</head>
+<body>
+ <div class="container">
+        <!-- Все элементы в одной линии -->
+        <div class="left-header">
+          <a href="https://farabi.university/?lang=ru" target="_blank">
+            <img src="logo.PNG" alt="Логотип" id="logo" class="logo">
+          </a>
+      
+          <nav>
+            <ul>
+              <li><a href="finalindex.html">Карта</a></li>
+              <li><a href="contacts.html">Контакты</a></li>
+            </ul>
+          </nav>
+      
+          <div class="social-icons">
+            <a href="https://www.instagram.com/digoxin11/" target="_blank">
+              <img src="insta-icon.png" alt="Instagram" class="social-logo">
+            </a>
+            <a href="https://www.tiktok.com/@asuka.bags" target="_blank">
+              <img src="tiktok-icon.png" alt="TikTok" class="social-logo">
+            </a>
+          </div>
+        </div>
+      </div>
+  <h1>Карта пробок по времени</h1>
+  <select id="timeSelector">
+    {select_options}
+  </select>
+
+  <iframe id="mapFrame" src="maps/map00.html"></iframe>
+  
+  <script>
+    document.getElementById("timeSelector").addEventListener("change", function () {{
+      document.getElementById("mapFrame").src = this.value;
+    }});
+  </script>
+</body>
+</html>

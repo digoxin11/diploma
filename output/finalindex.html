@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.16/mediaelement-and-player.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mediaelement/4.2.16/mediaelementplayer.min.css" />
+    <title>Сегментированный трафик Алматы</title>
+  
+</head>
+<body>
+ <div class="container">
+        <!-- Все элементы в одной линии -->
+        <div class="left-header">
+          <a href="https://farabi.university/?lang=ru" target="_blank">
+            <img src="logo.PNG" alt="Логотип" id="logo" class="logo">
+          </a>
+      
+          <nav>
+            <ul>
+              <li><a href="finalindex.html">Карта</a></li>
+              <li><a href="contacts.html">Контакты</a></li>
+            </ul>
+          </nav>
+      
+          <div class="social-icons">
+            <a href="https://www.instagram.com/digoxin11/" target="_blank">
+              <img src="insta-icon.png" alt="Instagram" class="social-logo">
+            </a>
+            <a href="https://www.tiktok.com/@asuka.bags" target="_blank">
+              <img src="tiktok-icon.png" alt="TikTok" class="social-logo">
+            </a>
+          </div>
+        </div>
+      </div>
+  <h1>Карта пробок по времени</h1>
+  <select id="timeSelector">
+    <option value="maps/map00.html">02 мая 2025 — 00:00</option>
+<option value="maps/map01.html">02 мая 2025 — 01:00</option>
+<option value="maps/map02.html">02 мая 2025 — 02:00</option>
+<option value="maps/map03.html">02 мая 2025 — 03:00</option>
+<option value="maps/map04.html">02 мая 2025 — 04:00</option>
+<option value="maps/map05.html">02 мая 2025 — 05:00</option>
+<option value="maps/map06.html">02 мая 2025 — 06:00</option>
+<option value="maps/map07.html">02 мая 2025 — 07:00</option>
+<option value="maps/map08.html">02 мая 2025 — 08:00</option>
+<option value="maps/map09.html">02 мая 2025 — 09:00</option>
+<option value="maps/map10.html">02 мая 2025 — 10:00</option>
+<option value="maps/map11.html">02 мая 2025 — 11:00</option>
+<option value="maps/map12.html">02 мая 2025 — 12:00</option>
+<option value="maps/map13.html">02 мая 2025 — 13:00</option>
+<option value="maps/map14.html">02 мая 2025 — 14:00</option>
+<option value="maps/map15.html">02 мая 2025 — 15:00</option>
+<option value="maps/map16.html">02 мая 2025 — 16:00</option>
+<option value="maps/map17.html">02 мая 2025 — 17:00</option>
+<option value="maps/map18.html">02 мая 2025 — 18:00</option>
+<option value="maps/map19.html">02 мая 2025 — 19:00</option>
+<option value="maps/map20.html">02 мая 2025 — 20:00</option>
+<option value="maps/map21.html">02 мая 2025 — 21:00</option>
+<option value="maps/map22.html">02 мая 2025 — 22:00</option>
+<option value="maps/map23.html">02 мая 2025 — 23:00</option>
+  </select>
+
+  <iframe id="mapFrame" src="maps/map00.html"></iframe>
+  
+  <script>
+    document.getElementById("timeSelector").addEventListener("change", function () {
+      document.getElementById("mapFrame").src = this.value;
+    });
+  </script>
+</body>
+</html>
